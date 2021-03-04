@@ -1,0 +1,195 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>地图上Marker的波纹</title>
+        <script type="text/javascript" src="http://api.map.baidu.com/api?v=3.0&ak=0zNEXG9lw5AcmoGglFclDGYpXieNmQTP"></script>
+        <style type="text/css">
+            html, body, #allmap {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            
+            .wave-wapper {
+                position: absolute; 
+                top: 0; 
+                left: 0;
+                z-index: -7982821;
+            }
+            
+            .item {
+                position: absolute;
+                color: inherit;
+                background-color: blue;
+                border-radius: 50%;
+                border: 1px solid blue;
+            }
+            
+            .item1 {
+                width: 25px;
+                height: 10px;
+                left: 12px;
+                top: 19px;
+                -webkit-animation: wave 2s infinite ease-in;
+                animation: wave 2s infinite ease-in;
+                -webkit-animation-delay: 0s; 
+                animation-delay: 0s;
+                mask: radial-gradient(transparent 30%, #000 30%);
+                -webkit-mask: radial-gradient(transparent 30%, #000 30%);
+            }
+            
+            .item2 {
+                width: 54px;
+                height: 25px;
+                left: -3px;
+                top: 12px;
+                -webkit-animation: wave 2s infinite ease-in;
+                animation: wave 2s infinite ease-in;
+                -webkit-animation-delay: 0s;
+                animation-delay: 0s;
+                opacity: 0;
+                mask: radial-gradient(transparent 55%, #000 55%);
+                -webkit-mask: radial-gradient(transparent 48%, #000 48%);
+            }
+            
+            @-webkit-keyframes wave {
+                from {
+                    -webkit-transform: scale(0);
+                    transform: scale(0);
+                    opacity: 1;
+                }
+                to {
+                    -webkit-transform: scale(1);
+                    transform: scale(1);
+                    opacity: 0;
+                }
+            }
+            
+            @keyframes wave {
+                from {
+                    -webkit-transform: scale(0);
+                    transform: scale(0);
+                    opacity: 1;
+                }
+                to {
+                    -webkit-transform: scale(1);
+                    transform: scale(1);
+                    opacity: 0;
+                }
+            }
+            
+        </style>
+    </head>
+ 
+    <body>
+        <div id="allmap" style="height: 80%;"></div>
+        <button onclick="removeMarkers()">移除marker</button>
+        <button onclick="displayWaveList(true)">显示所有波纹</button>
+        <button onclick="displayWaveList(false)">隐藏所有波纹</button>
+ 
+        <script type="text/javascript">
+            // 百度地图API功能
+            var mp = new BMap.Map("allmap");
+            var waveList = [];
+            var markerList = [];
+            let pointNumber = new BMap.Point(116.297047, 39.979542)
+
+            mp.centerAndZoom(new BMap.Point(116.3964, 39.9093), 15);
+            mp.enableScrollWheelZoom();
+            
+            //地图点击事件
+            console.log(pointNumber);
+            // mp.addEventListener("click", function(e) {
+              let myIcon = new BMap.Icon('../../static/images/wifi.png', new BMap.Size(43, 55));
+
+                var marker = new BMap.Marker(pointNumber,{ icon: myIcon }),
+                    waveItem;
+
+                mp.addOverlay(marker);
+                markerList.push(marker);
+                
+                for(var i = 0, len = waveList.length; i < len; i++){
+                    if(!waveList[i].hasMarker){
+                        waveItem = waveList[i];
+                        break;
+                    }
+                }
+                if(!waveItem){
+                    waveItem = addWaveToMarker(mp);
+                }
+                
+                marker.waveItem = waveItem;
+                //绑定标记
+                waveItem.hasMarker = true;
+                for(var i = 0, len = markerList.length; i < len; i++){
+                    displaySingleWave(markerList[i], true ? true : false)
+                }
+
+                // //鼠标悬浮在marker上的监听
+                // marker.addEventListener("mouseover", function(e) {
+                //     displaySingleWave(this, true);
+                // });
+                // //鼠标移出marker的监听
+                // marker.addEventListener("mouseout", function(e) {
+                //     displaySingleWave(this, false);
+                // });
+                
+                // //marker移除监听
+                // marker.addEventListener('remove',function(e){
+                //     //移除marker是波纹对象绑定标记置为false
+                //     if(this.waveItem){
+                //         this.waveItem.hasMarker = false;
+                //         this.waveItem.style.display = 'none';
+                //     }
+                // })
+            // });
+            //为地图添加波纹dom
+            function addWaveToMarker(mp){
+                var waveWapper = document.createElement('div'),
+                    waveChild1 = document.createElement('div'),
+                    waveChild2 = document.createElement('div');
+                
+                waveWapper.classList = 'wave-wapper';
+                waveChild1.classList = 'item item1';
+                waveChild2.classList = 'item item2';
+                waveWapper.appendChild(waveChild1);
+                waveWapper.appendChild(waveChild2);
+                
+                mp.getPanes().markerPane.appendChild(waveWapper);
+                waveList.push(waveWapper);
+                
+                return waveWapper;
+            }
+            
+            //移除所有marker
+            function removeMarkers(){
+                for(var i = 0, len = markerList.length; i < len; i++){
+                    mp.removeOverlay(markerList[i]);
+                }
+                markerList = [];
+            }
+            //显示所有波纹
+            function displayWaveList(isShow){
+                for(var i = 0, len = markerList.length; i < len; i++){
+                    displaySingleWave(markerList[i], true ? true : false)
+                }
+            }
+            displayWaveList(true)
+            //显隐波纹
+            function displaySingleWave(marker, isShow){
+                var cssValue = isShow ? 'block' : 'none';
+                if(marker && marker.waveItem){
+                    if(isShow){
+                        var pixel = mp.pointToOverlayPixel(marker.point);
+                        marker.waveItem.style.left = pixel.x - 26 + "px";
+                        marker.waveItem.style.top = pixel.y - 25 + "px";
+                    }
+                    marker.waveItem.style.display = cssValue;
+                }
+            }
+        </script>
+    </body>
+ 
+</html>
+ 
